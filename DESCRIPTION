@@ -11,10 +11,11 @@ Authors@R: c(
   )
 Description: Plot spidergrams for geochemical data using conventionnal
   normalizations.
-License: What license is it under?
+License: GPL (>= 3)
 Encoding: UTF-8
-LazyData: true
+LazyData: false
 Depends: 
     R (>= 2.10)
 URL: https://github.com/jfmoyen/ggSpider
 BugReports: https://github.com/jfmoyen/ggSpider/issues
+RoxygenNote: 7.3.1

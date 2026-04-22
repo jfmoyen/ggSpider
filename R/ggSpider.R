@@ -17,7 +17,7 @@ get_norm <- function(norm,normScheme = GCDKitNormScheme){
   #' @export
 
   if(is.character(norm)){
-    whichNorm <- grep(norm,normScheme$name)
+    whichNorm <- grep(norm,names(GCDKitNormScheme))
 
     if(length(whichNorm) == 0){
       cat("No matching normalization scheme!\n")
@@ -26,18 +26,25 @@ get_norm <- function(norm,normScheme = GCDKitNormScheme){
 
     if(length(whichNorm) > 1){
       cat("Ambiguous normalization scheme!\n")
-      print(normScheme[whichNorm,]$name)
+      print(names(GCDKitNormScheme)[whichNorm])
       return(NULL)
     }
 
     if(length(whichNorm) == 1){
-      print(normScheme[whichNorm,]$name)
-      return(normScheme[whichNorm,]$scheme[[1]] )
+      print(names(GCDKitNormScheme)[whichNorm])
+      return(normScheme[[whichNorm]] )
+    }
+  }
+
+    if(!is.null(dim(norm))){ # A df or a matrix
+      norm <- data.frame(norm)
+      ee <- as.numeric(norm[1,])
+      names(ee) <- colnames(norm)
+      return(ee)
     }
 
-  }else{
+  # else
     return(norm)
-  }
 
 }
 
@@ -55,16 +62,21 @@ spider_data <- function(df,norm){
     #' one line per element/sample combination!)
     #'
   #' @param df a data.frame that will be formatted for spidergrams
-  #' @norm A normalization scheme, either as a named vector or the name of a scheme existing
+  #' @param norm A normalization scheme, either as a named vector or the name of a scheme existing
   #' in the database. It will be processed by get_norm().
   #'
   #' @returns a tibble in long form, with one line for each sample/element combination. All
   #' the other variables are retained, to allow further aes() mappings.
   #' @export
+  #' @import dplyr
 
 
-  # Coerce df to a data frame if matrix or vector ####TODO
-  # df <- tibble(df)
+  # Coerce df to a tibble
+  if(is.null(dim(df))){ # df is a vector
+    df <- bind_rows(df)
+  }else{ # df is either a matrix or a df (or tbl)
+    df <- as_tibble(df)
+  }
 
   # Get norm scheme from database if needed
   norm <- get_norm(norm)
@@ -80,16 +92,16 @@ spider_data <- function(df,norm){
     mutate(across(elt,
                   ~ .x / norm[cur_column()]
     )
-    )
+    ) %>%
+    # Add row identifier
+    rowid_to_column(var = ".row") %>%
+    # To long format
+    pivot_longer(cols = all_of(elt),
+                      names_to = "Element", values_to = "Normalized") %>%
+    {.} -> df_out
 
-  # Add row identifier
-  df$.row <- rownames(df)
+  return(df_out)
 
-  # To long format
-  df %>% pivot_longer(cols = all_of(elt),
-                      names_to = "Element", values_to = "Normalized")
-
-  return(df)
 }
 
 
@@ -97,7 +109,7 @@ spider_data <- function(df,norm){
 #### Plot data
 ggspiderplot <- function(df, norm,
                          .norm =  get_norm(norm), .df = spider_data(df,norm),
-                         interpolate_missing = F,... ){
+                         ... ){
   #' A function to build the skeleton of a spidergram
   #'
   #' @description
@@ -119,16 +131,99 @@ ggspiderplot <- function(df, norm,
     #' only supplied if the user needs to override the call to spider_data()
     #' @param .norm Named vector with normalization info, if the user needs
     #' to bypass the call to get_norm)
-    #' @param interpolate_missing if true, a line is drawn through missing values
     #'
     #' @returns a ggplot object, to which geometries must be added.
-
-
-  if(interpolate_missing){
-    .df <- .df[!is.na(df2$Normalized),]
-  }
+    #' @export
+    #' @import ggplot2
 
   ggplot(.df, aes(x=Element, y=Normalized, group = .row))+
     scale_x_discrete(limits=names(.norm))+
     scale_y_log10()
 }
+
+
+GeomLineContinuous <- ggproto("GeomLineContinuous", GeomLine,
+
+                     # Specify the required aesthetics
+                     required_aes = c("x", "y"),
+
+                     # Transform the data before any drawing takes place
+                     setup_data = function(data, params) {
+                       data[!is.na(data$y),]
+                     }
+)
+
+geom_line_continuous <- function(mapping = NULL, data = NULL,
+                       stat = "identity", position = "identity",
+                       ..., na.rm = FALSE, show.legend = NA,
+                       inherit.aes = TRUE) {
+  #' Lines that connect accross missing values in spidergrams
+  #' @description
+    #' This is an exact equivalent to geom_line(), with the exception
+    #' that the line is connected across missing values.
+    #'
+  #' @seealso [geom_line()]
+  #' @import ggplot2
+  #' @export
+
+  layer(
+    data = data,
+    mapping = mapping,
+    geom = GeomLineContinuous,
+    stat = stat,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(na.rm = na.rm, ...)
+  )
+}
+
+GeomRange <- ggproto("GeomRange", GeomRibbon,
+
+                              # Specify the required aesthetics
+                              required_aes = c("x", "y"),
+
+                              # Transform the data before any drawing takes place
+                              setup_data = function(data, params) {
+                               # browser()
+
+                                .fmax <- function(x){
+                                  if(any(!is.na(x))){return(max(x,na.rm=T))}else{return(NA)}
+                                }
+                                .fmin <- function(x){
+                                  if(any(!is.na(x))){return(min(x,na.rm=T))}else{return(NA)}
+                                }
+
+                                data %>% group_by(x,PANEL) %>%
+                                  summarize(ymax = .fmax(y),
+                                            ymin = .fmin(y) ) %>%
+                                  filter(!is.na(ymin)&!is.na(ymax)) %>%
+                                  mutate(group = 1)
+
+                              }
+)
+
+geom_range <- function(mapping = NULL, data = NULL,
+                       stat = "identity", position = "identity",
+                       ..., na.rm = FALSE, show.legend = NA,
+                       inherit.aes = TRUE) {
+  #' A field encompassing all the values
+  #' @description
+  #' This generates a polygon that includes all the values, for each element
+  #'
+  #' @import ggplot2
+  #' @export
+
+  layer(
+    data = data,
+    mapping = mapping,
+    geom = GeomRange,
+    stat = stat,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(na.rm = na.rm, ...)
+  )
+}
+
+

@@ -1,0 +1,68 @@
+---
+output: github_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# ggSpider
+
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+Geochemistry a branch of geology) uses a certain type of plots known as
+"multi-elements normalized diagrams", or for short, "spider diagrams"
+(or spidergrams, or spiderplots). They allow to display simultaneously
+the composition of a rock for a group of elements, for instance for all
+the Rare Earth Elements (REE) (i.e. La to Yb, atomic number 57 to 71).
+There are a few additional conventional embellishments that I'm not
+going to justify further (you can read about them ... ), but are
+expected by the users.
+
+Before I go further - yes, I'm aware of the conceptual issues with
+parallel coordinates plots and I absolutely know what is problematic
+with thse diagrams, but they are the convention in the subfield, so ours
+is not to reason why, but to do or to die, etc.
+
+A recipe for a plain spidergram: 1) Take the analysis for one or several
+samples; 2) Select the elements of interest; 3) Normalize each analysis,
+by dividing each element's composition by the concentration in a
+reference material for this element 4) Arrange the elements in the
+appropriate order 5) For each sample, - plot each element as a dot at
+the right Y value - ... generally, using a log scale - ... generally,
+connect the dots
+
+## Installation
+
+You can install the development version of ggSpider from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("jfmoyen/ggSpider")
+```
+
+## Example
+
+See more in demo.R
+
+```{r example}
+library(tidyverse)
+library(ggSpider)
+
+data("atacazo")
+ggspiderplot(atacazo,norm="Nakamura")+geom_line_continuous(aes(colour = SiO2))
+
+```
