@@ -117,3 +117,12 @@ ggspiderplot(atacazo,norm="Boynton")+
   geom_point()+
   geom_line_continuous()+
   facet_wrap(~Volcano)
+
+### You can always use themes and other customization !
+ggspiderplot(atacazo,norm="Boynton")+
+  geom_range(data=spider_data(ata1,"Boynton"),fill="grey")+
+  geom_point()+
+  geom_line_continuous()+
+  facet_wrap(~Volcano)+
+  scale_y_log10(breaks=c(1,10,100),limits=c(0.9,110))+
+  theme(panel.grid.minor.y = element_blank() )
