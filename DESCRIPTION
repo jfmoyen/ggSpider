@@ -1,0 +1,18 @@
+Package: ggSpider
+Type: Package
+Title: A Framework for Spiderplots using ggplot
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Jean-François", "Moyen",
+      email = "jfmoyen@gmail.com",
+      role = c("aut", "cre")
+    )
+  )
+Description: Plot spidergrams for geochemical data using conventionnal
+  normalizations.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Depends: 
+    R (>= 2.10)
