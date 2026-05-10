@@ -50,6 +50,8 @@ get_norm <- function(norm,normScheme = GCDKitNormScheme){
 
 
 ##### Prepare data
+# This function should be able to find out if the data is already formatted !
+# The easiest is probably to give it an attr ...
 spider_data <- function(df,norm){
   #' Prepare data to plot a spidergram
   #'
@@ -70,6 +72,10 @@ spider_data <- function(df,norm){
   #' @export
   #' @import dplyr
 
+  # Check of the data is already in spider-ready form
+  if(has_attribute(df,"normScheme")){
+    return(df)
+  }
 
   # Coerce df to a tibble
   if(is.null(dim(df))){ # df is a vector
@@ -99,6 +105,8 @@ spider_data <- function(df,norm){
     pivot_longer(cols = all_of(elt),
                       names_to = "Element", values_to = "Normalized") %>%
     {.} -> df_out
+
+  attr(df_out,"normScheme") <- "normalized"
 
   return(df_out)
 
@@ -143,7 +151,7 @@ ggspiderplot <- function(df, norm,
 
 
 GeomLineContinuous <- ggproto("GeomLineContinuous", GeomLine,
-
+## TODO ## Make it accept "normal" data without explicit transf using spider_data()
                      # Specify the required aesthetics
                      required_aes = c("x", "y"),
 

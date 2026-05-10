@@ -24,7 +24,7 @@ ggspiderplot(atacazo,norm="Nakamura")+
 atac <- filter(atacazo,Volcano == "Atacazo")
 nina <- filter(atacazo,Volcano == "Ninahuilca")
 
-# In this case we need to manually call spider_data()
+# In this case we need to manually call spider_data() to normalize the second dataset!
 atac %>% ggspiderplot(norm="Boynton")+geom_line_continuous(color="green")+
   geom_line_continuous(data=spider_data(nina,norm="Boynton"),color="red")
 

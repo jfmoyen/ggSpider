@@ -8,7 +8,6 @@
 #' one normalization scheme (names of elements in order and values)
 #'
 #' @source GCDkit package, <https://gcdkit.org>>
-#' @export
 "GCDKitNormScheme"
 
 
